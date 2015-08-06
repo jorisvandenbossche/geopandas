@@ -6,6 +6,14 @@ import numpy as np
 from six import next
 from six.moves import xrange
 from shapely.geometry import Polygon
+from matplotlib.collections import LineCollection
+from matplotlib.colors import colorConverter
+
+from geopandas.plotting import norm_cmap, gencolor
+
+
+def is_uniform_geom_type(s):
+    return (s.geom_type == s.geom_type.iloc[0]).all()
 
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0):
@@ -49,6 +57,16 @@ def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
             plot_linestring(ax, line, color=color, linewidth=linewidth)
 
 
+def plot_linestring_collection(ax, geoms, values, colormap='Set1', linewidth=1):
+    """ Plot a single LineString geometry """
+    lines = LineCollection([np.array(geom)[:, :2] for geom in geoms])
+    lines.set_array(values)
+    lines.set_cmap(colormap)
+    ax.add_collection(lines, autolim=True)
+    ax.autoscale_view()
+    return ax, lines
+
+
 def plot_point(ax, pt, marker='o', markersize=2, color='black'):
     """ Plot a single Point geometry """
     ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0,
@@ -75,7 +93,8 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', color=None, axes=None, linewidth=1.0, figsize=None, **color_kwds):
+def plot_series(s, colormap='Set1', color=None, axes=None, linewidth=1.0,
+                figsize=None, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -120,18 +139,23 @@ def plot_series(s, colormap='Set1', color=None, axes=None, linewidth=1.0, figsiz
         ax.set_aspect('equal')
     else:
         ax = axes
-    color_generator = gencolor(len(s), colormap=colormap)
-    for geom in s:
-        if color is None:
-            col = next(color_generator)
-        else:
-            col = color
-        if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
-        elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=col, linewidth=linewidth)
-        elif geom.type == 'Point':
-            plot_point(ax, geom, color=col)
+    if is_uniform_geom_type(s) and s.geom_type.iloc[0].startswith('LineString'):
+        values = np.arange(len(s))
+        # all the same types -> we can use Collections
+        plot_linestring_collection(ax, s.geometry, values, colormap=colormap)
+    else:
+        color_generator = gencolor(len(s), colormap=colormap)
+        for geom in s:
+            if color is None:
+                col = next(color_generator)
+            else:
+                col = color
+            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
+                plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
+            elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+                plot_multilinestring(ax, geom, color=col, linewidth=linewidth)
+            elif geom.type == 'Point':
+                plot_point(ax, geom, color=col)
     plt.draw()
     return ax
 
@@ -246,17 +270,22 @@ def plot_dataframe(s, column=None, colormap=None, color=None, linewidth=1.0,
             ax.set_aspect('equal')
         else:
             ax = axes
-        for geom, value in zip(s.geometry, values):
-            if color is None:
-                col = cmap.to_rgba(value)
-            else:
-                col = color
-            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
-            elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-                plot_multilinestring(ax, geom, color=col, linewidth=linewidth)
-            elif geom.type == 'Point':
-                plot_point(ax, geom, color=col)
+
+        if is_uniform_geom_type(s) and s.geom_type.iloc[0].startswith('LineString'):
+            # all the same types -> we can use Collections
+            plot_linestring_collection(ax, s.geometry, values, colormap=colormap)
+        else:
+            for geom, value in zip(s.geometry, values):
+                if color is None:
+                    col = cmap.to_rgba(value)
+                else:
+                    col = color
+                if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
+                    plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
+                elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+                    plot_multilinestring(ax, geom, color=col, linewidth=linewidth)
+                elif geom.type == 'Point':
+                    plot_point(ax, geom, color=col)
         if legend:
             if categorical:
                 patches = []

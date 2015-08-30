@@ -5,6 +5,30 @@ from six import next
 from six.moves import xrange
 from shapely.geometry import Polygon
 
+from matplotlib.collections import LineCollection
+from matplotlib.colors import colorConverter
+
+
+import warnings
+    
+
+def is_uniform_geom_type(s):
+    return (s.geom_type == s.geom_type.iloc[0]).all()
+
+
+def plot_linestring_collection(ax, geoms, values, colormap='Set1', color=None, linewidth=1, **kwargs):
+    """ Plot a single LineString geometry """
+    lines = LineCollection([np.array(geom)[:, :2] for geom in geoms])
+    if color is not None:
+        lines.set_color(color)
+    else:        
+        lines.set_array(values)
+        lines.set_cmap(colormap)
+    ax.add_collection(lines, autolim=True)
+    ax.autoscale_view()
+    return ax, lines
+
+
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0):
     """ Plot a single Polygon geometry """
@@ -47,9 +71,10 @@ def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
             plot_linestring(ax, line, color=color, linewidth=linewidth)
 
 
-def plot_point(ax, pt, marker='o', markersize=2):
+def plot_point(ax, pt, marker='o', markersize=6, color=None):
     """ Plot a single Point geometry """
-    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
+    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0, color=color)
+
 
 
 def gencolor(N, colormap='Set1'):
@@ -72,68 +97,57 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **color_kwds):
+def plot_series(s, colormap='Set1', color=None, ax=None, linewidth=1.0, **color_kwds):
     """ Plot a GeoSeries
-
         Generate a plot of a GeoSeries geometry with matplotlib.
-
         Parameters
         ----------
-
         Series
             The GeoSeries to be plotted.  Currently Polygon,
             MultiPolygon, LineString, MultiLineString and Point
             geometries can be plotted.
-
         colormap : str (default 'Set1')
             The name of a colormap recognized by matplotlib.  Any
             colormap will work, but categorical colormaps are
             generally recommended.  Examples of useful discrete
             colormaps include:
-
                 Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
-
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
-
-        linewidth : float (default 1.0)
-            Line width for geometries.
-
-        figsize : pair of floats (default None)
-            Size of the resulting matplotlib.figure.Figure. If the argument
-            axes is given explicitly, figsize is ignored.
-
         **color_kwds : dict
             Color options to be passed on to plot_polygon
-
         Returns
         -------
-
         matplotlib axes instance
     """
     import matplotlib.pyplot as plt
-    if axes is None:
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.set_aspect('equal')
+    if ax is None:
+        fig = plt.gcf()
+        fig.add_subplot(111, aspect='equal')
+        ax = plt.gca()
+    color_iter = gencolor(len(s), colormap=colormap)
+    if is_uniform_geom_type(s) and s.geom_type.iloc[0].startswith('LineString'):
+        values = np.arange(len(s))
+        # all the same types -> we can use Collections
+        plot_linestring_collection(ax, s.geometry, values, colormap=colormap, color=color, linewidth=linewidth)
     else:
-        ax = axes
-    color = gencolor(len(s), colormap=colormap)
-    for geom in s:
-        if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=next(color), linewidth=linewidth, **color_kwds)
-        elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=next(color), linewidth=linewidth)
-        elif geom.type == 'Point':
-            plot_point(ax, geom)
+        for geom in s:
+            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
+                if color is not None:
+                    plot_multipolygon(ax, geom, facecolor=color, **color_kwds)
+                else:
+                    plot_multipolygon(ax, geom, facecolor=next(color_iter), **color_kwds)
+            elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+                plot_multilinestring(ax, geom, color=next(color_iter), **color_kwds)
+            elif geom.type == 'Point':
+                plot_point(ax, geom, color=color, **color_kwds)
     plt.draw()
     return ax
 
 
-def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
-                   categorical=False, legend=False, axes=None,
-                   scheme=None, k=5, vmin=None, vmax=None, figsize=None,
-                   **color_kwds
-                   ):
+def plot_dataframe(s, column=None, colormap=None, color=None, alpha=0.5,
+                   categorical=False, legend=False, ax=None, scheme=None,
+                   k=5, linewidth=1.0, **kwargs):
     """ Plot a GeoDataFrame
 
         Generate a plot of a GeoDataFrame with matplotlib.  If a
@@ -160,8 +174,9 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
         colormap : str (default 'Set1')
             The name of a colormap recognized by matplotlib.
 
-        linewidth : float (default 1.0)
-            Line width for geometries.
+        alpha : float (default 0.5)
+            Alpha value for polygon fill regions.  Has no effect for
+            lines or points.
 
         legend : bool (default False)
             Plot a legend (Experimental; currently for categorical
@@ -173,31 +188,9 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
         scheme : pysal.esda.mapclassify.Map_Classifier
             Choropleth classification schemes
 
-        vmin : float
-            Minimum value for color map.
-
-        vmax : float
-            Maximum value for color map.
-
         k   : int (default 5)
             Number of classes (ignored if scheme is None)
 
-        vmin : None or float (default None)
-
-            Minimum value of colormap. If None, the minimum data value
-            in the column to be plotted is used.
-
-        vmax : None or float (default None)
-
-            Maximum value of colormap. If None, the maximum data value
-            in the column to be plotted is used.
-
-        figsize
-            Size of the resulting matplotlib.figure.Figure. If the argument
-            axes is given explicitly, figsize is ignored.
-
-        **color_kwds : dict
-            Color options to be passed on to plot_polygon
 
         Returns
         -------
@@ -210,7 +203,7 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
     from matplotlib import cm
 
     if column is None:
-        return plot_series(s.geometry, colormap=colormap, axes=axes, linewidth=linewidth, figsize=figsize, **color_kwds)
+        return plot_series(s.geometry, colormap=colormap, color=color, ax=ax, **kwargs)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
@@ -224,27 +217,37 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
         else:
             values = s[column]
         if scheme is not None:
-            values = __pysal_choro(values, scheme, k=k)
-        cmap = norm_cmap(values, colormap, Normalize, cm, vmin=vmin, vmax=vmax)
-        if axes is None:
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.set_aspect('equal')
+            binning = __pysal_choro(values, scheme, k=k)
+            values = binning.yb
+            # set categorical to True for creating the legend
+            categorical = True
+            binedges = [binning.yb.min()] + binning.bins.tolist()
+            categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
+                          for i in range(len(binedges)-1)]
+
+        cmap = norm_cmap(values, colormap, Normalize, cm)
+        if ax is None:
+            fig = plt.gcf()
+            fig.add_subplot(111, aspect='equal')
+            ax = plt.gca()
+        if is_uniform_geom_type(s) and s.geom_type.iloc[0].startswith('LineString'):
+            # all the same types -> we can use Collections
+            plot_linestring_collection(ax, s.geometry, values, colormap=colormap, color=color, linewidth=linewidth)
         else:
-            ax = axes
-        for geom, value in zip(s.geometry, values):
-            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), linewidth=linewidth, **color_kwds)
-            elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-                plot_multilinestring(ax, geom, color=cmap.to_rgba(value), linewidth=linewidth)
-            # TODO: color point geometries
-            elif geom.type == 'Point':
-                plot_point(ax, geom)
+            for geom, value in zip(s.geometry, values):
+                if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
+                    plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), alpha=alpha)
+                elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+                    plot_multilinestring(ax, geom, color=cmap.to_rgba(value))
+                # TODO: color point geometries
+                elif geom.type == 'Point':
+                    plot_point(ax, geom, color=cmap.to_rgba(value))
         if legend:
             if categorical:
                 patches = []
                 for value, cat in enumerate(categories):
                     patches.append(Line2D([0], [0], linestyle="none",
-                                          marker="o", alpha=color_kwds.get('alpha', 0.5),
+                                          marker="o", alpha=alpha,
                                           markersize=10, markerfacecolor=cmap.to_rgba(value)))
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
@@ -256,28 +259,22 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
 
 def __pysal_choro(values, scheme, k=5):
     """ Wrapper for choropleth schemes from PySAL for use with plot_dataframe
-
         Parameters
         ----------
-
         values
             Series to be plotted
-
         scheme
             pysal.esda.mapclassify classificatin scheme ['Equal_interval'|'Quantiles'|'Fisher_Jenks']
-
         k
             number of classes (2 <= k <=9)
-
         Returns
         -------
-
         values
             Series with values replaced with class identifier if PySAL is available, otherwise the original values are used
     """
 
     try:
-        from pysal.esda.mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
+        from mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
         schemes = {}
         schemes['equal_interval'] = Equal_Interval
         schemes['quantiles'] = Quantiles
@@ -288,16 +285,10 @@ def __pysal_choro(values, scheme, k=5):
             scheme = 'quantiles'
             print('Unrecognized scheme: ', s0)
             print('Using Quantiles instead')
-        if k < 2 or k > 9:
-            print('Invalid k: ', k)
-            print('2<=k<=9, setting k=5 (default)')
-            k = 5
         binning = schemes[scheme](values, k)
-        values = binning.yb
+        return binning
     except ImportError:
-        print('PySAL not installed, setting map to default')
-
-    return values
+        raise ImportError("PySAL is required to use the 'scheme' keyword")
 
 
 def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):

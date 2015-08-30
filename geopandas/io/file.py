@@ -1,12 +1,17 @@
 import os
 
-import fiona
 import numpy as np
-from shapely.geometry import mapping
+import pandas as pd
+from shapely.geometry import mapping, shape
 
 from six import iteritems
 from geopandas import GeoDataFrame
 
+try:
+    import fiona
+    HAS_FIONA = True
+except ImportError:
+    HAS_FIONA = False
 
 def read_file(filename, **kwargs):
     """
@@ -16,15 +21,25 @@ def read_file(filename, **kwargs):
     opened and *kwargs* are keyword args to be passed to the method when
     opening the file.
     """
-    bbox = kwargs.pop('bbox', None)
-    with fiona.open(filename, **kwargs) as f:
-        crs = f.crs
-        if bbox is not None:
-            assert len(bbox)==4
-            f_filt = f.filter(bbox=bbox)
-        else:
-            f_filt = f
-        gdf = GeoDataFrame.from_features(f, crs=crs)
+    if HAS_FIONA:
+        bbox = kwargs.pop('bbox', None)
+        with fiona.open(filename, **kwargs) as f:
+            crs = f.crs
+            if bbox is not None:
+                assert len(bbox)==4
+                f_filt = f.filter(bbox=bbox)
+            else:
+                f_filt = f
+            gdf = GeoDataFrame.from_features(f, crs=crs)
+    else:
+        import shapefile
+
+        shp = shapefile.Reader(filename)
+        geom = [shape(g.__geo_interface__) for g in shp.shapes()]
+        properties = pd.DataFrame(shp.records(), columns=[i[0] for i in shp.fields][1:])
+        properties['geometry'] = geom
+        
+        gdf = GeoDataFrame(properties)
 
     return gdf
 
@@ -53,6 +68,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
     """
+    import fiona
     if schema is None:
         schema = infer_schema(df)
     filename = os.path.abspath(os.path.expanduser(filename))

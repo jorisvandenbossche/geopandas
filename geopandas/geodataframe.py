@@ -16,7 +16,7 @@ from six import string_types
 from geopandas import GeoSeries
 from geopandas.base import GeoPandasBase
 from geopandas.plotting import plot_dataframe
-import geopandas.io
+
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
@@ -172,6 +172,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_file(). For additional help, see read_file()
 
         """
+        import geopandas.io
         return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
@@ -211,6 +212,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_postgis(). For additional help, see read_postgis()
 
         """
+        import geopandas.io
         return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
 
@@ -339,6 +341,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         The *kwargs* are passed to fiona.open and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
         """
+        import geopandas.io
         from geopandas.io.file import to_file
         to_file(self, filename, driver, schema, **kwargs)
 

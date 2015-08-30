@@ -6,8 +6,8 @@ except ImportError:
 from geopandas.geoseries import GeoSeries
 from geopandas.geodataframe import GeoDataFrame
 
-from geopandas.io.file import read_file
-from geopandas.io.sql import read_postgis
+#from geopandas.io.file import read_file
+#from geopandas.io.sql import read_postgis
 
 # make the interactive namespace easier to use
 # for `from geopandas import *` demos.

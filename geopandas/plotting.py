@@ -52,6 +52,13 @@ def plot_point(ax, pt, marker='o', markersize=2):
     ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
 
 
+def plot_point_collection(ax, geom, marker='o', markersize=2):
+    """Plot a collection of Point geometries"""
+    x = [p.x for p in geom]
+    y = [p.y for p in geom]
+    ax.scatter(x, y, s=markersize, marker=marker)
+
+
 def gencolor(N, colormap='Set1'):
     """
     Color generator intended to work with one of the ColorBrewer
@@ -72,7 +79,8 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **color_kwds):
+def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None,
+                as_collection=False, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -118,13 +126,17 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **co
     else:
         ax = axes
     color = gencolor(len(s), colormap=colormap)
-    for geom in s:
-        if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=next(color), linewidth=linewidth, **color_kwds)
-        elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=next(color), linewidth=linewidth)
-        elif geom.type == 'Point':
-            plot_point(ax, geom)
+    if as_collection:
+        if s.geom_type.iloc[0] == 'Point':
+            plot_point_collection(ax, s, **color_kwds)
+    else:
+        for geom in s:
+            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
+                plot_multipolygon(ax, geom, facecolor=next(color), linewidth=linewidth, **color_kwds)
+            elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+                plot_multilinestring(ax, geom, color=next(color), linewidth=linewidth)
+            elif geom.type == 'Point':
+                plot_point(ax, geom)
     plt.draw()
     return ax
 

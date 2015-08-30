@@ -20,13 +20,26 @@ def read_file(filename, **kwargs):
     with fiona.open(filename, **kwargs) as f:
         crs = f.crs
         if bbox is not None:
-            assert len(bbox)==4
+            assert len(bbox) == 4
             f_filt = f.filter(bbox=bbox)
         else:
             f_filt = f
         gdf = GeoDataFrame.from_features(f, crs=crs)
 
     return gdf
+
+
+def _read_pyshp(filename):
+    """Shapefile reader using pyshp instead of fiona"""
+    import shapefile
+
+    shp = shapefile.Reader(filename)
+    geom = [shape(g.__geo_interface__) for g in shp.shapes()]
+    colnames = [i[0] for i in shp.fields][1:]
+    properties = pd.DataFrame(shp.records(), columns=colnames)
+    properties['geometry'] = geom
+
+    return GeoDataFrame(properties)
 
 
 def to_file(df, filename, driver="ESRI Shapefile", schema=None,

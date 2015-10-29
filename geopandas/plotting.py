@@ -39,6 +39,36 @@ def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5, l
             plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth)
 
 
+def plot_polygon_collection(ax, geoms, values=None, colormap='Set1', facecolor=None, edgecolor=None,
+                            alpha=0.5, linewidth=1.0, **kwargs):
+    """ Plot a collection of Polygon geometries """
+
+    from descartes.patch import PolygonPatch
+    from matplotlib.patches import Polygon
+    from matplotlib.collections import PatchCollection
+
+    patches = []
+
+    for poly in geoms:
+
+        a = np.asarray(poly.exterior)
+        if poly.has_z:
+            poly = shapely.geometry.Polygon(zip(*poly.exterior.xy))
+
+        patches.append(Polygon(a))
+
+    patches = PatchCollection(patches, facecolor=facecolor, linewidth=linewidth,
+                              edgecolor=edgecolor, alpha=alpha, **kwargs)
+
+    if values is not None:
+        patches.set_array(values)
+        patches.set_cmap(colormap)
+
+    ax.add_collection(patches, autolim=True)
+    ax.autoscale_view()
+    return patches
+
+
 def plot_linestring(ax, geom, color='black', linewidth=1.0):
     """ Plot a single LineString geometry """
     a = np.array(geom)
@@ -163,6 +193,8 @@ def plot_series(s, colormap=None, color=None, axes=None, linewidth=1.0,
             plot_linestring_collection(ax, s, values, colormap=colormap, color=color, linewidth=linewidth, **color_kwds)
         elif geom_type == 'Point':
             plot_point_collection(ax, s, values, colormap=colormap, color=color, linewidth=linewidth, **color_kwds)
+        elif geom_type == 'Polygon':
+            plot_polygon_collection(ax, s, values, colormap=colormap, color=color, linewidth=linewidth, **color_kwds)
 
     else:
         color_generator = gencolor(len(s), colormap=colormap)
@@ -299,6 +331,8 @@ def plot_dataframe(s, column=None, colormap=None, color=None, linewidth=1.0,
                 plot_linestring_collection(ax, s.geometry, values, colormap=colormap, linewidth=linewidth, **color_kwds)
             elif geom_type == 'Point':
                 plot_point_collection(ax, s.geometry, values, colormap=colormap, color=color, linewidth=linewidth, **color_kwds)
+            elif geom_type == 'Polygon':
+                plot_polygon_collection(ax, s.geometry, values, colormap=colormap, color=color, linewidth=linewidth, **color_kwds)
         else:
             for geom, value in zip(s.geometry, values):
                 if color is None:

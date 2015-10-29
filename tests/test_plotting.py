@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import numpy as np
 import os
@@ -26,7 +26,7 @@ BASELINE_DIR = os.path.join(os.path.dirname(__file__), 'baseline_images', 'test_
 TRAVIS = bool(os.environ.get('TRAVIS', False))
 
 
-class PlotTests(unittest.TestCase):
+class TestImageComparisons(unittest.TestCase):
 
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
@@ -107,6 +107,67 @@ class PlotTests(unittest.TestCase):
         self._compare_images(ax=ax, filename=filename)
 
 
+class TestPlotting(unittest.TestCase):
+
+    def setUp(self):
+
+        self.N = 10
+        values = np.arange(self.N)
+
+        self.points = GeoSeries(Point(i, i) for i in range(self.N))
+        self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+
+
+    def test_single_color(self):
+
+        N = 10
+        values = np.arange(N)
+
+        ## test Points
+
+        points = GeoSeries(Point(i, i) for i in range(N))
+        df = GeoDataFrame({'geometry': points, 'values': values})
+
+        ax = points.plot(color='green')
+        _check_colors(ax.get_lines(), ['green']*N)
+
+        ax = df.plot(color='green')
+        _check_colors(ax.get_lines(), ['green']*N)
+
+        ax = df.plot(column='values', color='green')
+        _check_colors(ax.get_lines(), ['green']*N)
+
+        ## test LineStrings
+
+        lines = GeoSeries([LineString([(0, i), (9, i)]) for i in xrange(N)])
+        df = GeoDataFrame({'geometry': lines, 'values': values})
+
+        ax = lines.plot(color='green')
+        _check_colors(ax.get_lines(), ['green']*N)
+
+        ax = df.plot(color='green')
+        _check_colors(ax.get_lines(), ['green']*N)
+
+        ax = df.plot(column='values', color='green')
+        _check_colors(ax.get_lines(), ['green']*N)
+
+        ## test Polygons
+
+        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+        t2 = Polygon([(1, 0), (2, 0), (2, 1)])
+        polys = GeoSeries([t1, t2])
+        df = GeoDataFrame({'geometry': polys, 'values': [0, 1]})
+
+        ax = polys.plot(color='green')
+        _check_colors(ax.patches, ['green']*2, alpha=0.5)
+
+        ax = df.plot(color='green')
+        _check_colors(ax.patches, ['green']*2, alpha=0.5)
+
+        ax = df.plot(column='values', color='green')
+        _check_colors(ax.patches, ['green']*2, alpha=0.5)
+
+
 class TestPySALPlotting(unittest.TestCase):
 
     @classmethod
@@ -126,6 +187,22 @@ class TestPySALPlotting(unittest.TestCase):
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [u'0.00 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
         self.assertEqual(labels, expected)
+
+
+def _check_colors(collection, expected_colors, alpha=None):
+
+    from matplotlib.lines import Line2D
+    import matplotlib.colors as colors
+    conv = colors.colorConverter
+
+    for patch, color in zip(collection, expected_colors):
+        if isinstance(patch, Line2D):
+            # points/lines
+            result = patch.get_color()
+        else:
+            # polygons
+            result = patch.get_facecolor()
+        assert conv.to_rgba(result) == conv.to_rgba(color, alpha=alpha)
 
 
 if __name__ == '__main__':

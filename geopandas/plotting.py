@@ -49,7 +49,7 @@ def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
             plot_linestring(ax, line, color=color, linewidth=linewidth)
 
 
-def plot_point(ax, pt, marker='o', markersize=2, color="black"):
+def plot_point(ax, pt, marker='o', markersize=2, color='black'):
     """ Plot a single Point geometry """
     ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0,
             color=color)
@@ -75,7 +75,7 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **color_kwds):
+def plot_series(s, colormap='Set1', color=None, axes=None, linewidth=1.0, figsize=None, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -120,19 +120,23 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **co
         ax.set_aspect('equal')
     else:
         ax = axes
-    color = gencolor(len(s), colormap=colormap)
+    color_generator = gencolor(len(s), colormap=colormap)
     for geom in s:
+        if color is None:
+            col = next(color_generator)
+        else:
+            col = color
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=next(color), linewidth=linewidth, **color_kwds)
+            plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=next(color), linewidth=linewidth)
+            plot_multilinestring(ax, geom, color=col, linewidth=linewidth)
         elif geom.type == 'Point':
-            plot_point(ax, geom, color=next(color))
+            plot_point(ax, geom, color=col)
     plt.draw()
     return ax
 
 
-def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
+def plot_dataframe(s, column=None, colormap=None, color=None, linewidth=1.0,
                    categorical=False, legend=False, axes=None,
                    scheme=None, k=5, vmin=None, vmax=None, figsize=None,
                    **color_kwds
@@ -213,7 +217,9 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
     from matplotlib import cm
 
     if column is None:
-        return plot_series(s.geometry, colormap=colormap, axes=axes, linewidth=linewidth, figsize=figsize, **color_kwds)
+        return plot_series(s.geometry, colormap=colormap, color=color,
+                           axes=axes, linewidth=linewidth, figsize=figsize,
+                           **color_kwds)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
@@ -241,12 +247,16 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
         else:
             ax = axes
         for geom, value in zip(s.geometry, values):
+            if color is None:
+                col = cmap.to_rgba(value)
+            else:
+                col = color
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), linewidth=linewidth, **color_kwds)
+                plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-                plot_multilinestring(ax, geom, color=cmap.to_rgba(value), linewidth=linewidth)
+                plot_multilinestring(ax, geom, color=col, linewidth=linewidth)
             elif geom.type == 'Point':
-                plot_point(ax, geom, color=cmap.to_rgba(value))
+                plot_point(ax, geom, color=col)
         if legend:
             if categorical:
                 patches = []

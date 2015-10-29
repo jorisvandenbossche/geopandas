@@ -103,7 +103,7 @@ def plot_point(ax, pt, marker='o', markersize=2, color='black'):
             color=color)
 
 
-def plot_point_collection(ax, geom, values=None, marker='o', markersize=2, colormap=None, color=None, **kwargs):
+def plot_point_collection(ax, geom, values=None, marker='o', markersize=20, colormap=None, color=None, **kwargs):
     """Plot a collection of Point geometries"""
     x = [p.x for p in geom]
     y = [p.y for p in geom]

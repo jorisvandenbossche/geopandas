@@ -39,13 +39,16 @@ def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5, l
             plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth)
 
 
-def plot_polygon_collection(ax, geoms, values=None, colormap='Set1', facecolor=None, edgecolor=None,
+def plot_polygon_collection(ax, geoms, values=None, colormap='Set1', color=None, facecolor=None, edgecolor=None,
                             alpha=0.5, linewidth=1.0, **kwargs):
     """ Plot a collection of Polygon geometries """
 
     from descartes.patch import PolygonPatch
     from matplotlib.patches import Polygon
     from matplotlib.collections import PatchCollection
+
+    if color is not None:
+        facecolor=color
 
     patches = []
 

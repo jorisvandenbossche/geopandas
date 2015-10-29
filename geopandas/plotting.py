@@ -61,7 +61,8 @@ def plot_polygon_collection(ax, geoms, values=None, colormap='Set1', facecolor=N
                               edgecolor=edgecolor, alpha=alpha, **kwargs)
 
     if values is not None:
-        patches.set_array(values)
+        # as array -> categorical "AttributeError: 'list' object has no attribute 'ndim'" in self._A
+        patches.set_array(np.asarray(values))
         patches.set_cmap(colormap)
 
     ax.add_collection(patches, autolim=True)
@@ -132,7 +133,7 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap=None, color=None, axes=None, linewidth=1.0,
+def plot_series(s, colormap=None, color=None, ax=None, linewidth=1.0,
                 figsize=None, **color_kwds):
     """ Plot a GeoSeries
 
@@ -154,15 +155,15 @@ def plot_series(s, colormap=None, color=None, axes=None, linewidth=1.0,
 
                 Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
 
-        axes : matplotlib.pyplot.Artist (default None)
-            axes on which to draw the plot
+        ax : matplotlib.pyplot.Artist (default None)
+            ax on which to draw the plot
 
         linewidth : float (default 1.0)
             Line width for geometries.
 
         figsize : pair of floats (default None)
             Size of the resulting matplotlib.figure.Figure. If the argument
-            axes is given explicitly, figsize is ignored.
+            ax is given explicitly, figsize is ignored.
 
         **color_kwds : dict
             Color options to be passed on to plot_polygon
@@ -173,11 +174,9 @@ def plot_series(s, colormap=None, color=None, axes=None, linewidth=1.0,
         matplotlib axes instance
     """
     import matplotlib.pyplot as plt
-    if axes is None:
+    if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
-    else:
-        ax = axes
     if colormap is None:
         if color is None:
             if 'facecolor' not in color_kwds:
@@ -214,7 +213,7 @@ def plot_series(s, colormap=None, color=None, axes=None, linewidth=1.0,
 
 
 def plot_dataframe(s, column=None, colormap=None, color=None, linewidth=1.0,
-                   categorical=False, legend=False, axes=None,
+                   categorical=False, legend=False, ax=None,
                    scheme=None, k=5, vmin=None, vmax=None, figsize=None,
                    **color_kwds
                    ):
@@ -251,7 +250,7 @@ def plot_dataframe(s, column=None, colormap=None, color=None, linewidth=1.0,
             Plot a legend (Experimental; currently for categorical
             plots only)
 
-        axes : matplotlib.pyplot.Artist (default None)
+        ax : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
 
         scheme : pysal.esda.mapclassify.Map_Classifier
@@ -278,7 +277,7 @@ def plot_dataframe(s, column=None, colormap=None, color=None, linewidth=1.0,
 
         figsize
             Size of the resulting matplotlib.figure.Figure. If the argument
-            axes is given explicitly, figsize is ignored.
+            ax is given explicitly, figsize is ignored.
 
         **color_kwds : dict
             Color options to be passed on to plot_polygon
@@ -295,7 +294,7 @@ def plot_dataframe(s, column=None, colormap=None, color=None, linewidth=1.0,
 
     if column is None:
         return plot_series(s.geometry, colormap=colormap, color=color,
-                           axes=axes, linewidth=linewidth, figsize=figsize,
+                           ax=ax, linewidth=linewidth, figsize=figsize,
                            **color_kwds)
     else:
         if s[column].dtype is np.dtype('O'):
@@ -318,11 +317,9 @@ def plot_dataframe(s, column=None, colormap=None, color=None, linewidth=1.0,
             categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
                           for i in range(len(binedges)-1)]
         cmap = norm_cmap(values, colormap, Normalize, cm, vmin=vmin, vmax=vmax)
-        if axes is None:
+        if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
             ax.set_aspect('equal')
-        else:
-            ax = axes
 
         if is_uniform_geom_type(s):
             # all the same types -> we can use Collections

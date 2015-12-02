@@ -53,13 +53,14 @@ def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
             plot_linestring(ax, line, color=color, linewidth=linewidth)
 
 
-def plot_linestring_collection(ax, geoms, values=None, cmap='Set1', **kwargs):
+def plot_linestring_collection(ax, geoms, values=None, cmap='Set1', vmin=None, vmax=None, **kwargs):
     """ Plot a single LineString geometry """
     from matplotlib.collections import LineCollection
     lines = LineCollection([np.array(geom)[:, :2] for geom in geoms], **kwargs)
     if values is not None:
         lines.set_array(values)
         lines.set_cmap(cmap)
+        lines.set_clim(vmin, vmax)
     ax.add_collection(lines, autolim=True)
     ax.autoscale_view()
     return lines
@@ -103,7 +104,7 @@ def gencolor(N, colormap='Set1'):
 
 
 def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
-                figsize=None, as_collection=False, **color_kwds):
+                figsize=None, as_collection=True, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -194,7 +195,7 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
 def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
                    categorical=False, legend=False, ax=None,
                    scheme=None, k=5, vmin=None, vmax=None, figsize=None,
-                   **color_kwds):
+                   as_collection=True, **color_kwds):
     """ Plot a GeoDataFrame
 
         Generate a plot of a GeoDataFrame with matplotlib.  If a
@@ -300,18 +301,20 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
             binedges = [binning.yb.min()] + binning.bins.tolist()
             categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
                           for i in range(len(binedges)-1)]
-        cmap = norm_cmap(values, cmap, Normalize, cm, vmin=vmin, vmax=vmax)
+
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
             ax.set_aspect('equal')
 
-        if is_uniform_geom_type(s):
+        cmap = norm_cmap(values, cmap, Normalize, cm, vmin=vmin, vmax=vmax)
+
+        if is_uniform_geom_type(s) and as_collection:
             # all the same types -> we can use Collections
             geom_type = s.geom_type.iloc[0]
             if geom_type == 'LineString':
-                plot_linestring_collection(ax, s.geometry, values, cmap=cmap, linewidth=linewidth, **color_kwds)
+                plot_linestring_collection(ax, s.geometry, values, cmap=cmap.cmap, vmin=vmin, vmax=vmax, linewidth=linewidth, **color_kwds)
             elif geom_type == 'Point':
-                plot_point_collection(ax, s.geometry, values, cmap=cmap, linewidth=linewidth, **color_kwds)
+                plot_point_collection(ax, s.geometry, values, cmap=cmap.cmap, vmin=vmin, vmax=vmax, linewidth=linewidth, **color_kwds)
         else:
             for geom, value in zip(s.geometry, values):
                 if color is None:

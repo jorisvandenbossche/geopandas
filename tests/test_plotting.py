@@ -251,8 +251,13 @@ def _check_colors(collection, expected_colors, alpha=None):
 
     from matplotlib.lines import Line2D
     import matplotlib.colors as colors
+    import matplotlib.collections as mcollections
     conv = colors.colorConverter
 
+    if isinstance(collection, mcollections.Collection):
+        for result, color in zip(collection.get_colors(), expected_colors):
+            assert conv.to_rgba(result) == conv.to_rgba(color, alpha=alpha)
+    
     for patch, color in zip(collection, expected_colors):
         if isinstance(patch, Line2D):
             # points/lines

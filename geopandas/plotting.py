@@ -37,6 +37,35 @@ def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5, l
             plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth)
 
 
+def plot_polygon_collection(ax, geoms, values=None, cmap='Set1',  facecolor=None, edgecolor=None, color=None,
+                            alpha=0.5, linewidth=1.0, vmin=None, vmax=None, **kwargs):
+    """ Plot a collection of Polygon geometries """
+
+    from matplotlib.collections import PatchCollection
+    import matplotlib.patches as mpatches
+
+    patches = []
+
+    for poly in geoms:
+        a = np.asarray(poly.exterior)
+        patches.append(mpatches.Polygon(a))
+
+    patches = PatchCollection(patches, facecolor=facecolor, linewidth=linewidth, edgecolor=edgecolor, alpha=alpha, **kwargs)
+
+    # seems something wrong with matplotlib
+    if color is not None:
+        patches.set_color(color)
+
+    if values is not None:
+        patches.set_array(values)
+        patches.set_cmap(cmap)
+        patches.set_clim(vmin, vmax)
+
+    ax.add_collection(patches, autolim=True)
+    ax.autoscale_view()
+    return patches
+
+
 def plot_linestring(ax, geom, color='black', linewidth=1.0):
     """ Plot a single LineString geometry """
     a = np.array(geom)
@@ -168,11 +197,13 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         else:
             # cmap should be used
             values = np.arange(len(s))
-        if geom_type == 'LineString':
+        if geom_type == 'Polygon':
+            plot_polygon_collection(ax, s, values=values, cmap=cmap, color=color, linewidth=linewidth, **color_kwds)
+        elif geom_type == 'LineString':
             if 'edgecolor' in color_kwds:
                 values = None
             plot_linestring_collection(ax, s, values=values, cmap=cmap, color=color, linewidth=linewidth, **color_kwds)
-        if geom_type == 'Point':
+        elif geom_type == 'Point':
             plot_point_collection(ax, s, values=values, cmap=cmap, color=color, linewidth=linewidth, **color_kwds)
     else:
         color_generator = gencolor(len(s), colormap=cmap)
@@ -311,7 +342,9 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         if is_uniform_geom_type(s) and as_collection:
             # all the same types -> we can use Collections
             geom_type = s.geom_type.iloc[0]
-            if geom_type == 'LineString':
+            if geom_type == 'Polygon':
+                plot_polygon_collection(ax, s.geometry, values, cmap=cmap.cmap, vmin=vmin, vmax=vmax, linewidth=linewidth, **color_kwds)
+            elif geom_type == 'LineString':
                 plot_linestring_collection(ax, s.geometry, values, cmap=cmap.cmap, vmin=vmin, vmax=vmax, linewidth=linewidth, **color_kwds)
             elif geom_type == 'Point':
                 plot_point_collection(ax, s.geometry, values, cmap=cmap.cmap, vmin=vmin, vmax=vmax, linewidth=linewidth, **color_kwds)

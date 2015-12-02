@@ -321,7 +321,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
             categories = list(set(s[column].values))
             categories.sort()
             valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-            values = [valuemap[k] for k in s[column]]
+            values = np.array([valuemap[k] for k in s[column]])
         else:
             values = s[column]
         if scheme is not None:

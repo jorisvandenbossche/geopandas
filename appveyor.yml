@@ -38,7 +38,8 @@ install:
   - conda info -a
   - "conda create -q -n test-environment python=%PYTHON_VERSION%"
   - activate test-environment
-  - conda install pandas matplotlib shapely fiona pyproj pytest
+  - conda install pandas matplotlib shapely fiona pyproj rtree
+  - conda install pytest mock
   #- pip install coverage
   #- conda config --set ssl_verify false
   #- SET REQ=ci\requirements-%PYTHON_VERSION%-%PYTHON_ARCH%.run

@@ -49,6 +49,6 @@ install:
 test_script:
   # tests
   - cd \
-  - cmd: activate pandas
+  - cmd: activate test-environment
   - cmd: conda list
   - pytest

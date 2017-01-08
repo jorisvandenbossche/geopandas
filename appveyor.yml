@@ -51,4 +51,4 @@ test_script:
   # tests
   - activate test-environment
   - conda list
-  - pytest
+  - pytest geopandas -v

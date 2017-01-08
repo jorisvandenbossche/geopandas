@@ -48,7 +48,6 @@ install:
 
 test_script:
   # tests
-  - cd \
-  - cmd: activate test-environment
-  - cmd: conda list
+  - activate test-environment
+  - conda list
   - pytest

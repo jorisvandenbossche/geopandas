@@ -3,7 +3,6 @@
 # https://packaging.python.org/en/latest/appveyor/
 # https://github.com/rmcgibbo/python-appveyor-conda-example
 
-# Backslashes in quotes need to be escaped: \ -> "\\"
 
 matrix:
   fast_finish: true     # immediately finish build once one of the jobs fails.

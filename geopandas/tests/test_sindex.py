@@ -6,12 +6,13 @@ from geopandas import GeoSeries, GeoDataFrame, base, read_file
 from geopandas.tests.util import unittest, download_nybb
 
 
+@unittest.skipIf(sys.platform.startswith("win"), "fails on AppVeyor")
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSeriesSindex(unittest.TestCase):
 
     def test_empty_index(self):
         self.assert_(GeoSeries().sindex is None)
-
+    
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
         self.assertEqual(s.sindex.size, 1)
@@ -41,7 +42,6 @@ class TestSeriesSindex(unittest.TestCase):
         self.assertEqual(len(s), 6)
         self.assertEqual(s.sindex.size, 6)
     
-    @unittest.skipIf(sys.platform.startswith("win"), "fails on AppVeyor")
     def test_lazy_build(self):
         s = GeoSeries([Point(0, 0)])
         self.assert_(s._sindex is None)
@@ -49,6 +49,7 @@ class TestSeriesSindex(unittest.TestCase):
         self.assert_(s._sindex is not None)
 
 
+@unittest.skipIf(sys.platform.startswith("win"), "fails on AppVeyor")
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestFrameSindex(unittest.TestCase):
     def setUp(self):

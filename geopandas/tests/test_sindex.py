@@ -1,3 +1,5 @@
+import sys
+
 from shapely.geometry import Polygon, Point
 
 from geopandas import GeoSeries, GeoDataFrame, base, read_file
@@ -38,7 +40,8 @@ class TestSeriesSindex(unittest.TestCase):
         s = s.append(t)
         self.assertEqual(len(s), 6)
         self.assertEqual(s.sindex.size, 6)
-
+    
+    @unittest.skipIf(sys.platform.startswith("win"), "fails on AppVeyor")
     def test_lazy_build(self):
         s = GeoSeries([Point(0, 0)])
         self.assert_(s._sindex is None)

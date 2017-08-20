@@ -272,7 +272,7 @@ class GeoPandasBase(object):
     def unary_union(self):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``."""
-        return unary_union(self.geometry.values)
+        return self.geometry.array.unary_union
 
     #
     # Binary operations that return a pandas Series

@@ -388,7 +388,7 @@ class GeometryArray(ExtensionArray):
 
     _dtype = GeometryDtype()
 
-    def __init__(self, data, parent=False):
+    def __init__(self, data, base=False):
         if isinstance(data, self.__class__):
             data = data.data
         elif not isinstance(data, np.ndarray):
@@ -402,7 +402,7 @@ class GeometryArray(ExtensionArray):
                 "'data' should be a 1-dimensional array of geometry objects."
             )
         self.data = data
-        self.parent = parent
+        self.base = base
 
     @property
     def dtype(self):
@@ -415,7 +415,7 @@ class GeometryArray(ExtensionArray):
         if isinstance(idx, numbers.Integral):
             return vectorized.get_element(self.data, idx)
         elif isinstance(idx, (Iterable, slice)):
-            return GeometryArray(self.data[idx], parent=self)
+            return GeometryArray(self.data[idx], base=self)
         else:
             raise TypeError("Index type not supported", idx)
 
@@ -445,7 +445,7 @@ class GeometryArray(ExtensionArray):
             )
 
     def __del__(self):
-        if self.parent is False:
+        if self.base is False:
             try:
                 vectorized.vec_free(self.data)
             except (TypeError, AttributeError):
@@ -459,7 +459,7 @@ class GeometryArray(ExtensionArray):
     def __setstate__(self, state):
         geoms = vectorized.deserialize(*state)
         self.data = geoms
-        self.parent = None
+        self.base = None
 
     # -------------------------------------------------------------------------
     # Geometry related methods
@@ -539,7 +539,7 @@ class GeometryArray(ExtensionArray):
     def exterior(self):
         out = vectorized.geo_unary_op("exterior", self.data)
         # exterior shares data with self
-        return GeometryArray(out, parent=self)
+        return GeometryArray(out, base=self)
 
     @property
     def interiors(self):

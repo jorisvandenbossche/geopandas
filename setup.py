@@ -1,12 +1,9 @@
 #!/usr/bin/env/python
 """Installation script
 
-Version handling borrowed from pandas project.
 """
 
-import sys
 import os
-import warnings
 
 try:
     from setuptools import setup
@@ -38,19 +35,24 @@ else:
 data_files = []
 
 for item in os.listdir("geopandas/datasets"):
-    if os.path.isdir(os.path.join("geopandas/datasets/", item)) \
-            and not item.startswith('__'):
-        data_files.append(os.path.join("datasets", item, '*'))
+    if not item.startswith('__'):
+        if os.path.isdir(os.path.join("geopandas/datasets/", item)):
+            data_files.append(os.path.join("datasets", item, '*'))
+        elif item.endswith('.zip'):
+            data_files.append(os.path.join("datasets", item))
+
 
 setup(name='geopandas',
       version=versioneer.get_version(),
       description='Geographic pandas extensions',
       license='BSD',
-      author='Kelsey Jordahl',
-      author_email='kjordahl@enthought.com',
+      author='GeoPandas contributors',
+      author_email='kjordahl@alum.mit.edu',
       url='http://geopandas.org',
       long_description=LONG_DESCRIPTION,
       packages=['geopandas', 'geopandas.io', 'geopandas.tools',
-                'geopandas.datasets'],
+                'geopandas.datasets',
+                'geopandas.tests', 'geopandas.tools.tests'],
       package_data={'geopandas': data_files},
-      install_requires=INSTALL_REQUIRES)
+      install_requires=INSTALL_REQUIRES,
+      cmdclass=versioneer.get_cmdclass())

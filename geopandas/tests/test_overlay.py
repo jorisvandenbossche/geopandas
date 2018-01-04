@@ -72,6 +72,7 @@ class TestOverlayNYBB(unittest.TestCase):
     def test_intersection(self):
         df = overlay(self.polydf, self.polydf2, how="intersection")
         assert df['BoroName'][0] is not None
+        # note - we get 68 polygons, but the answer could also be only 15 multi-polygons
         assert df.shape == (68, 7)
 
     def test_identity(self):

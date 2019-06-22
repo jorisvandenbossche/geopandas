@@ -389,6 +389,7 @@ class GeometryArray(ExtensionArray):
             raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
+        raise NotImplementedError
         if isinstance(value, pd.Series):
             value = value.values
         if isinstance(value, (list, np.ndarray)):
@@ -761,8 +762,11 @@ class GeometryArray(ExtensionArray):
         # if fill_value == 0:
         #     result[result == 0] = None
         # return GeometryArray(result)
-        result = self[idx]
-        result.data[idx == -1] = 0
+        idx = np.asarray(indices)
+
+        result = self[indices]
+        if allow_fill:
+            result.data[indices == -1] = 0
         return result
 
     def _fill(self, idx, value):
@@ -997,7 +1001,7 @@ class GeometryArray(ExtensionArray):
         ExtensionArray
         """
         data = np.concatenate([ga.data for ga in to_concat])
-        return GeometryArray(data)
+        return GeometryArray(data, base=list(to_concat))
 
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)

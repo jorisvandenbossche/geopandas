@@ -313,8 +313,8 @@ class TestGetitem(extension_tests.BaseGetitemTests):
     pass
 
 
-class TestSetitem(extension_tests.BaseSetitemTests):
-    pass
+# class TestSetitem(extension_tests.BaseSetitemTests):
+#     pass
 
 
 class TestMissing(extension_tests.BaseMissingTests):

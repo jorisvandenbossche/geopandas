@@ -64,6 +64,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
     -------
     GeoDataFrame
     """
+    print("DataFrame columns: ", df.columns)
 
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(geom_col))

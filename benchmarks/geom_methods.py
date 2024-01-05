@@ -57,8 +57,7 @@ class Bench:
                 "touches",
                 "within",
                 "geom_equals",
-                "geom_almost_equals",
-                "geom_equals_exact",
+                #"geom_equals_exact",
             )
         ],
     )
@@ -77,10 +76,10 @@ class Bench:
                 "touches",
                 "within",
                 "geom_equals",
-                "geom_almost_equals",
+                #"geom_equals_exact",
             )
         ],
-    )  # 'geom_equals_exact')])
+    )
     def time_binary_predicate_vector(self, op):
         getattr(self.triangles, op)(self.triangles2)
 

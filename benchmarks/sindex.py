@@ -1,3 +1,4 @@
+import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import read_file, datasets, GeoSeries
@@ -16,7 +17,7 @@ def generate_test_df():
     capitals = read_file(datasets.get_path("naturalearth_cities"))
     countries = world.to_crs("epsg:3395")[["geometry"]]
     capitals = capitals.to_crs("epsg:3395")[["geometry"]]
-    mixed = capitals.append(countries)  # get a mix of geometries
+    mixed = pd.concat([capitals, countries])  # get a mix of geometries
     points = capitals
     polygons = countries
     # filter out invalid geometries

@@ -4,6 +4,7 @@ Compatibility shim for the vectorized geometry operations.
 Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 
 """
+
 import warnings
 
 import numpy as np
@@ -319,9 +320,11 @@ def _binary_geo(op, left, right):
         data = np.empty(len(left), dtype=object)
         with compat.ignore_shapely2_warnings():
             data[:] = [
-                getattr(this_elem, op)(other_elem)
-                if this_elem is not None and other_elem is not None
-                else None
+                (
+                    getattr(this_elem, op)(other_elem)
+                    if this_elem is not None and other_elem is not None
+                    else None
+                )
                 for this_elem, other_elem in zip(left, right)
             ]
         return data
@@ -361,9 +364,11 @@ def _binary_predicate(op, left, right, *args, **kwargs):
         return np.array(data, dtype=bool)
     elif isinstance(right, np.ndarray):
         data = [
-            getattr(this_elem, op)(other_elem, *args, **kwargs)
-            if not (this_elem is None or other_elem is None)
-            else False
+            (
+                getattr(this_elem, op)(other_elem, *args, **kwargs)
+                if not (this_elem is None or other_elem is None)
+                else False
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return np.array(data, dtype=bool)
@@ -379,9 +384,11 @@ def _binary_op_float(op, left, right, *args, **kwargs):
     # as shapely does currently (https://github.com/Toblerity/Shapely/issues/498)
     if isinstance(right, BaseGeometry):
         data = [
-            getattr(s, op)(right, *args, **kwargs)
-            if not (s is None or s.is_empty or right.is_empty)
-            else np.nan
+            (
+                getattr(s, op)(right, *args, **kwargs)
+                if not (s is None or s.is_empty or right.is_empty)
+                else np.nan
+            )
             for s in left
         ]
         return np.array(data, dtype=float)
@@ -392,10 +399,12 @@ def _binary_op_float(op, left, right, *args, **kwargs):
             )
             raise ValueError(msg)
         data = [
-            getattr(this_elem, op)(other_elem, *args, **kwargs)
-            if not (this_elem is None or this_elem.is_empty)
-            | (other_elem is None or other_elem.is_empty)
-            else np.nan
+            (
+                getattr(this_elem, op)(other_elem, *args, **kwargs)
+                if not (this_elem is None or this_elem.is_empty)
+                | (other_elem is None or other_elem.is_empty)
+                else np.nan
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return np.array(data, dtype=float)
@@ -431,9 +440,11 @@ def _binary_op(op, left, right, *args, **kwargs):
             )
             raise ValueError(msg)
         data = [
-            getattr(this_elem, op)(other_elem, *args, **kwargs)
-            if not (this_elem is None or other_elem is None)
-            else null_value
+            (
+                getattr(this_elem, op)(other_elem, *args, **kwargs)
+                if not (this_elem is None or other_elem is None)
+                else null_value
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return np.array(data, dtype=dtype)
@@ -906,9 +917,11 @@ def clip_by_rect(data, xmin, ymin, xmax, ymax):
         clipped_geometries = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
             clipped_geometries[:] = [
-                shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
-                if s is not None
-                else None
+                (
+                    shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
+                    if s is not None
+                    else None
+                )
                 for s in data
             ]
         return clipped_geometries
@@ -1011,18 +1024,22 @@ def buffer(data, distance, resolution=16, **kwargs):
 
             with compat.ignore_shapely2_warnings():
                 out[:] = [
-                    geom.buffer(dist, resolution, **kwargs)
-                    if geom is not None
-                    else None
+                    (
+                        geom.buffer(dist, resolution, **kwargs)
+                        if geom is not None
+                        else None
+                    )
                     for geom, dist in zip(data, distance)
                 ]
             return out
 
         with compat.ignore_shapely2_warnings():
             out[:] = [
-                geom.buffer(distance, resolution, **kwargs)
-                if geom is not None
-                else None
+                (
+                    geom.buffer(distance, resolution, **kwargs)
+                    if geom is not None
+                    else None
+                )
                 for geom in data
             ]
         return out
@@ -1234,9 +1251,11 @@ def bounds(data):
     # as those return an empty tuple, not resulting in a 2D array
     bounds = np.array(
         [
-            geom.bounds
-            if not (geom is None or geom.is_empty)
-            else (np.nan, np.nan, np.nan, np.nan)
+            (
+                geom.bounds
+                if not (geom is None or geom.is_empty)
+                else (np.nan, np.nan, np.nan, np.nan)
+            )
             for geom in data
         ]
     )

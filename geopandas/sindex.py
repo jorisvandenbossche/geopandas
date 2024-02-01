@@ -827,9 +827,11 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             elif isinstance(geometry, list):
                 return np.asarray(
                     [
-                        array._shapely_to_geom(el)
-                        if isinstance(el, BaseGeometry)
-                        else el
+                        (
+                            array._shapely_to_geom(el)
+                            if isinstance(el, BaseGeometry)
+                            else el
+                        )
                         for el in geometry
                     ]
                 )

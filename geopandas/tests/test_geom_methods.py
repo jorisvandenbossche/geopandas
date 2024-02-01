@@ -612,14 +612,10 @@ class TestGeomMethods:
     )
     def test_hausdorff_distance(self):
         # closest point is (0, 0) in self.p1
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
